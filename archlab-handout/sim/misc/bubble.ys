@@ -1,0 +1,55 @@
+# Name: 马江岩
+# ID: 2000012707
+
+    .pos 0
+main:
+    irmovq  stack, %rsp
+    irmovq  Array, %rdi
+    irmovq  $6, %rsi
+    call    bubble_sort
+    halt
+
+bubble_sort:
+    pushq   %rbx
+    irmovq  $1, %rbx
+    rrmovq  %rsi, %rdx
+    subq    %rbx, %rdx
+    jl      done
+outer_loop:
+    xorq    %rcx, %rcx
+inner_loop:
+    rrmovq  %rdi, %r10
+    rrmovq  %rcx, %r11
+    addq    %r11, %r11
+    addq    %r11, %r11
+    addq    %r11, %r11
+    addq    %r11, %r10
+    mrmovq  (%r10), %r8
+    mrmovq  8(%r10), %r9
+    rrmovq  %r9, %r11
+    subq    %r8, %r11
+    jge     not_taken
+    rmmovq  %r8, 8(%r10)
+    rmmovq  %r9, (%r10)
+not_taken:
+    addq    %rbx, %rcx
+    rrmovq  %rcx, %r11
+    subq    %rdx, %r11
+    jl      inner_loop
+    subq    %rbx, %rdx
+    jge     outer_loop
+done:
+    popq    %rbx
+    ret
+
+    .align 8
+Array:
+    .quad   0xbca
+    .quad   0xcba
+    .quad   0xacb
+    .quad   0xcab
+    .quad   0xabc
+    .quad   0xbac
+
+    .pos 0x200
+stack:

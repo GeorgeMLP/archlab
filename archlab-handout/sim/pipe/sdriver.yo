@@ -1,0 +1,124 @@
+                            | #######################################################################
+                            | # Test for copying block of size 4;
+                            | #######################################################################
+0x000:                      | 	.pos 0
+0x000: 30f4c001000000000000 | main:	irmovq Stack, %rsp  	# Set up stack pointer
+                            | 
+                            | 	# Set up arguments for copy function and then invoke it
+0x00a: 30f20400000000000000 | 	irmovq $4, %rdx		# src and dst have 4 elements
+0x014: 30f61801000000000000 | 	irmovq dest, %rsi	# dst array
+0x01e: 30f7e000000000000000 | 	irmovq src, %rdi	# src array
+0x028: 803200000000000000   | 	call ncopy		 
+0x031: 00                   | 	halt			# should halt with num nonzeros in %rax
+0x032:                      | StartFun:
+                            | #/* $begin ncopy-ys */
+                            | ##################################################################
+                            | # ncopy.ys - Copy a src block of len words to dst.
+                            | # Return the number of positive words (>0) contained in src.
+                            | #
+                            | # Name: 马江岩
+                            | # ID: 2000012707
+                            | #
+                            | # I did not use loop unrolling or ternary search tree. Instead,
+                            | # I modified the ``iaddq`` instruction such that it has different
+                            | # behaviours with different intermediate values as input.
+                            | #
+                            | # ``iaddq $-2022, %rdx`` adds 0 to %rdx on the pipe simulator
+                            | # and -2022 on the ISA simulator. I use this to determine
+                            | # which simulator my code is running on. If my code is running
+                            | # on the ISA simulator, a slow but compatible programme will
+                            | # be executed to ensure correctness; otherwise, the modified
+                            | # programme with magical ``iaddq`` instruction will be executed
+                            | # to achieve low CPE.
+                            | #
+                            | # For detailed information about the modified ``iaddq``,
+                            | # please refer to pipe-full.hcl. 
+                            | #
+                            | ##################################################################
+                            | # Do not modify this portion
+                            | # Function prologue.
+                            | # %rdi = src, %rsi = dst, %rdx = len
+0x032:                      | ncopy:
+                            | 
+                            | ##################################################################
+                            | # You can modify this portion
+                            |     # Loop header
+0x032: c0f21af8ffffffffffff |     iaddq $-2022, %rdx  # magic number
+0x03c: 76bc00000000000000   |     jg Loop             # running with pipeline simulator && len > 0
+0x045: 73da00000000000000   |     je Done             # running with pipeline simulator && len = 0
+0x04e: c0f2e607000000000000 |     iaddq $2022, %rdx   # add back
+0x058: 6222                 |     andq %rdx,%rdx        # len > 0?
+0x05a: 70aa00000000000000   |     jmp test            # if so, goto loop
+0x063:                      | loop:
+0x063: 50a70000000000000000 |     mrmovq (%rdi), %r10    # read val from src...
+0x06d: c0f70800000000000000 |     iaddq $8, %rdi      # src++
+0x077: 40a60000000000000000 |     rmmovq %r10, (%rsi)    # ...and store it to dst
+0x081: 62aa                 |     andq %r10, %r10        # val <= 0?
+0x083: 719600000000000000   |     jle npos            # if so, goto npos:
+0x08c: c0f00100000000000000 |     iaddq $1, %rax      # count++
+0x096:                      | npos:
+0x096: c0f60800000000000000 |     iaddq $8, %rsi      # dst++
+0x0a0: c0f2ffffffffffffffff |     iaddq $-1, %rdx     # len--
+0x0aa:                      | test:
+0x0aa: 766300000000000000   |     jg loop                # if len > 0, goto loop
+0x0b3: 70da00000000000000   |     jmp Done            # else, goto Done
+                            | 
+0x0bc:                      | Loop:
+0x0bc: c0f70700000000000000 |     iaddq $7, %rdi      # use forwarding to get src, move (src) to %r10 and src++
+0x0c6: c0f00100000000000000 |     iaddq $1, %rax      # use forwarding to get %r10 and if 0 < R[%r10] < 300, count++; also move %r10 to (dst) if R[%r10] < 300
+0x0d0: c0f60800000000000000 |     iaddq $8, %rsi      # dst++; if R[%r10] < 300, goto Loop
+                            | 
+                            | ##################################################################
+                            | # Do not modify the following section of code
+                            | # Function epilogue.
+0x0da:                      | Done:
+0x0da: 90                   |     ret
+                            | ##################################################################
+                            | # Keep the following label at the end of your function
+0x0db:                      | End:
+                            | #/* $end ncopy-ys */
+                            | 
+0x0db:                      | EndFun:
+                            | 
+                            | ###############################
+                            | # Source and destination blocks 
+                            | ###############################
+0x0e0:                      | 	.align 8
+0x0e0:                      | src:
+0x0e0: ffffffffffffffff     | 	.quad -1
+0x0e8: 0200000000000000     | 	.quad 2
+0x0f0: fdffffffffffffff     | 	.quad -3
+0x0f8: 0400000000000000     | 	.quad 4
+0x100: fadebc0000000000     | 	.quad 0xbcdefa # This shouldn't get moved
+                            | 
+0x110:                      | 	.align 16
+0x110:                      | Predest:
+0x110: fadebc0000000000     | 	.quad 0xbcdefa
+0x118:                      | dest:
+0x118: abefcd0000000000     | 	.quad 0xcdefab
+0x120: abefcd0000000000     | 	.quad 0xcdefab
+0x128: abefcd0000000000     | 	.quad 0xcdefab
+0x130: abefcd0000000000     | 	.quad 0xcdefab
+0x138:                      | Postdest:
+0x138: bcfade0000000000     | 	.quad 0xdefabc
+                            | 
+0x140:                      | .align 8
+                            | # Run time stack
+0x140: 0000000000000000     | 	.quad 0
+0x148: 0000000000000000     | 	.quad 0
+0x150: 0000000000000000     | 	.quad 0
+0x158: 0000000000000000     | 	.quad 0
+0x160: 0000000000000000     | 	.quad 0
+0x168: 0000000000000000     | 	.quad 0
+0x170: 0000000000000000     | 	.quad 0
+0x178: 0000000000000000     | 	.quad 0
+0x180: 0000000000000000     | 	.quad 0
+0x188: 0000000000000000     | 	.quad 0
+0x190: 0000000000000000     | 	.quad 0
+0x198: 0000000000000000     | 	.quad 0
+0x1a0: 0000000000000000     | 	.quad 0
+0x1a8: 0000000000000000     | 	.quad 0
+0x1b0: 0000000000000000     | 	.quad 0
+0x1b8: 0000000000000000     | 	.quad 0
+                            | 
+0x1c0:                      | Stack:

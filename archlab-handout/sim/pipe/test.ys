@@ -1,0 +1,18 @@
+irmovq $256, %rdi
+mrmovq (%rdi), %r10
+nop
+nop
+nop
+jmp loop
+loop:
+mrmovq (%rdi), %rdx
+iaddq $1, %rax
+nop
+nop
+nop
+nop
+
+.pos 256
+.align 16
+.quad 0xbcdefa
+
