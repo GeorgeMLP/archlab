@@ -45,6 +45,6 @@ The three tables below describe what each instruction does in different stages o
 
 ![Stages of ```iaddq $1, %rax```.](https://github.com/GeorgeMLP/archlab/raw/master/Figures/fig2.png)
 
-![Stages of ```iaddq $8, %rsi```.](https://github.com/GeorgeMLP/archlab/raw/master/Figures/fig1.png)
+![Stages of ```iaddq $8, %rsi```.](https://github.com/GeorgeMLP/archlab/raw/master/Figures/fig3.png)
 
 You can refer to the header comments in ```ncopy.ys``` and ```pipe-full.hcl``` for more details.
